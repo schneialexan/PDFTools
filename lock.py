@@ -1,7 +1,7 @@
 import fitz  # PyMuPDF
 import os
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog
 
 # --- CONFIGURATION ---
 DEFAULT_INPUT = "input.pdf"
@@ -62,22 +62,25 @@ def interactive_lock():
                 user_choice = input("Lock this field? (y/n): ").lower().strip()
 
                 if user_choice == 'y':
-                    # Set Read-Only flags (Method: High-level + Low-level)
+                    # 1. Set the correct PyMuPDF attribute for font size
+                    # This prevents the text from auto-scaling to max height
+                    widget.text_fontsize = TEXT_SIZE
+                    
+                    # 2. Set Read-Only flags
                     widget.field_flags |= 1 
                     
-                    # Set fixed text size from configuration
-                    widget.field_font_size = TEXT_SIZE
-                    
+                    # 3. Update widget (This redraws the text at the specific TEXT_SIZE)
                     widget.update()
                     
-                    # Force update the raw PDF dictionary keys
+                    # 4. Force update the raw PDF dictionary keys
                     xref = widget.xref
                     doc.xref_set_key(xref, "Ff", "1") # Field Flag: ReadOnly
                     doc.xref_set_key(xref, "F", "4")  # Annotation Flag: Print/Static
-                    doc.xref_set_key(xref, "FS", str(TEXT_SIZE)) # Font Size from config
                     
                     fields_modified += 1
-                    print(f"Status: LOCKED ({TEXT_SIZE}pt font size set)")
+                    print(f"Status: LOCKED ({TEXT_SIZE}pt font size applied)")
+                else:
+                    print("Status: Kept editable")
 
     if fields_modified > 0:
         # Save with 'expand=True' to finalize the dictionary changes
